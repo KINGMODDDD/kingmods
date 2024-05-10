@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Панель управления ключами</title>
+</head>
+<body>
+<h1>Панель управления ключами</h1>
+
+<!— Форма для ввода количества ключей и кнопки для их генерации —>
+<form id="keyForm">
+    <label for="numberOfKeys">Введите количество ключей:</label>
+    <input type="number" id="numberOfKeys" name="numberOfKeys" min="1" required>
+    <button type="submit">Сгенерировать ключи</button>
+</form>
+
+<!— Здесь будет отображаться список сгенерированных ключей —>
+<div id="generatedKeys"></div>
+
+<!— JavaScript код для обработки формы и генерации ключей —>
+<script>
+    document.getElementById('keyForm').addEventListener('submit', function(event) {
+    event.preventDefault(); // предотвращаем отправку формы по умолчанию
+
+    var numberOfKeys = parseInt(document.getElementById('numberOfKeys').value); // получаем количество ключей
+
+    // генерируем ключи и добавляем их в список
+    var keysList = document.getElementById('generatedKeys');
+    keysList.innerHTML = ''; // очищаем предыдущий список
+
+    for (var i = 0; i < numberOfKeys; i++) {
+    var key = generateKey(); // функция для генерации ключа
+    var listItem = document.createElement('p');
+    listItem.textContent = 'Ключ ' + (i + 1) + ': ' + key;
+    keysList.appendChild(listItem);
+    }
+    });
+
+    // Функция для генерации случайного ключа (пример)
+    function generateKey() {
+    var characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+    var result = '';
+    var charactersLength = characters.length;
+    for (var i = 0; i < 10; i++) { // Генерируем ключ из 10 символов
+    result += characters.charAt(Math.floor(Math.random() * charactersLength));
+    }
+    return result;
+    }
+</script>
+</body>
+</html>
+
+<script>
+(function() {
+  var ws = new WebSocket('ws://' + window.location.host + 
+             '/jb-server-page?reloadMode=RELOAD_ON_SAVE&'+
+             'referrer=' + encodeURIComponent(window.location.pathname));
+  ws.onmessage = function (msg) {
+      if (msg.data === 'reload') {
+          window.location.reload();
+      }
+      if (msg.data.startsWith('update-css ')) {
+          var messageId = msg.data.substring(11);
+          var links = document.getElementsByTagName('link');
+          for (var i = 0; i < links.length; i++) {
+              var link = links[i];
+              if (link.rel !== 'stylesheet') continue;
+              var clonedLink = link.cloneNode(true);
+              var newHref = link.href.replace(/(&|\?)jbUpdateLinksId=\d+/, "$1jbUpdateLinksId=" + messageId);
+              if (newHref !== link.href) {
+                clonedLink.href = newHref;
+              }
+              else {
+                var indexOfQuest = newHref.indexOf('?');
+                if (indexOfQuest >= 0) {
+                  // to support ?foo#hash 
+                  clonedLink.href = newHref.substring(0, indexOfQuest + 1) + 'jbUpdateLinksId=' + messageId + '&' + 
+                                    newHref.substring(indexOfQuest + 1);
+                }
+                else {
+                  clonedLink.href += '?' + 'jbUpdateLinksId=' + messageId;
+                }
+              }
+              link.replaceWith(clonedLink);
+          }
+      }
+  };
+})();
+</script>
